@@ -1,0 +1,17 @@
+Data Collection
+	Collect Google Trends dataset
+	Collect Wikipedia Views dataset
+	Clean and finish Google News dataset
+
+Analysis
+        Complete panel regression
+
+Visualization
+        Craete bar plots for attention core
+	Create d3 version of spaghetti-gram
+               Order x-axes ticks
+               Remove ticks from y-axes if not first or last
+               Use countries to label first and last
+
+Miscellaneous
+	Come up with file naming convention

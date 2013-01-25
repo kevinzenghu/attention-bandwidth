@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <title>Media Attention - Spaghetti-Gram</title>
+
+  <script type="text/javascript" src="lib/d3/d3.js"></script>
+  <script type="text/javascript" src="lib/d3/d3.csv.js"></script>
+  <script type="text/javascript" src="lib/d3/d3.layout.js"></script>
+  <script type="text/javascript" src="parallel-coordinates.js"></script>
+
+  <script type="text/javascript" src="lib/jquery.js"></script>
+  <script type="text/javascript" src="lib/underscore.js"></script>
+  <script type="text/javascript" src="lib/backbone.js"></script>
+
+  <script src="lib/jquery-ui-1.8.16.custom.min.js"></script>
+  <script type="text/javascript" src="filter.js"></script>
+
+  <!-- SlickGrid -->
+  <link rel="stylesheet" href="lib/slickgrid/slick.grid.css" type="text/css" media="screen" charset="utf-8" />
+  <script src="lib/slickgrid/jquery.event.drag-2.0.min.js"></script>
+  <script src="lib/slickgrid/slick.core.js"></script>
+  <script src="lib/slickgrid/slick.grid.js"></script>
+  <script src="lib/slickgrid/slick.dataview.js"></script>
+  <script src="lib/slickgrid/slick.pager.js"></script>
+  <script src="grid.js"></script>
+  <script src="options.js"></script>
+  <script src="data/wikipedia_weekly_1-24-2013.js"></script>
+  <link rel="stylesheet" href="style.css" type="text/css" charset="utf-8" />
+</head>
+
+<body>
+<div id="nav">
+  <h1>Media Attention - Spaghetti-gram</h1>
+  <div class="widget right toggle">
+	  <input type="range" min="0" max="1" value="0.7" step="0.01" name="power" list="powers" id="line_opacity"></input>
+   <br/>
+	  Opacity: <span id="opacity_level">70%</span>
+	</div>
+  <div><a href="#" id="shadows" class="right toggle">Shadows</a></div>
+  <div><a href="#" id="inverted" class="right toggle">Dark</a></div>
+  <div><a href="#" id="no_ticks" class="right toggle">Hide Ticks</a></div>
+  <p class="intro left clear">
+    An interactive visualization of the bandwidth of media attention.
+  </p>
+</div>
+<div id="main">
+  <h3 id="h_country">Wikipedia English Edition</h3>
+  <div id="parallel"></div>
+  <div id="myGrid"></div>
+  <script type="text/javascript">
+
+  $(function() {
+
+    wiki_countries = wiki['countries'];
+
+    var dimensions = new Filter();
+    var highlighter = new Selector();
+
+    dimensions.set({data: wiki_countries});
+    var columns = _(wiki_countries[0]).keys().sort();
+
+    column_mapping = {};
+    for (var i = 0; i < columns.length; i++) {
+      if (columns[i] !== 'country') {
+                        var li = columns[i].split('-');
+                        var year = li[0].slice(2, 4);
+                        var month = li[1];
+                        var day = li[2];
+                        var date = year + '/' + month + '/' + day;
+                        column_mapping[date] = columns[i];
+                        }
+      else { column_mapping['Country'] = 'country'; }
+    }
+
+    columns = _(column_mapping).keys().sort();
+    var countries = columns.pop()
+    columns.unshift(countries);
+    var axes = _(columns).without('country');
+
+  // Scale colors by rank!!!
+  var colors = d3.scale.linear()
+  .domain([0, 40, 80, 120, 160, 200])
+  .range(["blue", "green", "yellow", "orange", "red"]);
+
+  var pc = parallel(dimensions, colors);
+
+    var slicky = new grid({
+      model: dimensions,
+      selector: highlighter,
+      width: $('body').width(),
+      columns: columns
+    });
+
+    // vertical full screen
+    var parallel_height = $(window).height() - 64 - 12 - 120 - 320;
+    if (parallel_height < 120) parallel_height = 120;  // min height
+    if (parallel_height > 340) parallel_height = 340;  // max height
+    $('#parallel').css({
+        height: parallel_height + 'px',
+        width: $(window).width() + 300 + 'px'
+    });
+
+    slicky.update();
+      pc.render();
+
+    dimensions.bind('change:filtered', function() {
+      var data = dimensions.get('data');
+      var filtered = dimensions.get('filtered');
+      var data_size = _(data).size();
+      var filtered_size = _(filtered).size();
+
+      var opacity = _([5/Math.pow(filtered_size, 0.37), 100]).min();
+      $('#line_opacity').val(opacity).change();
+    });
+
+    highlighter.bind('change:selected', function() {
+                        $('#h_country').text("Wikipedia English Edition");
+      var highlighted = this.get('selected');
+      pc.highlight(highlighted);
+    });
+
+    $('#line_opacity').change(function() {
+      var val = $(this).val();
+      $('#parallel .foreground path').css('stroke-opacity', val.toString());
+      $('#opacity_level').html((Math.round(val*10000)/100) + "%");
+    });
+
+    $('#myGrid').resizable({
+      handles: 's'
+    });
+
+    function addslashes( str ) {
+      return (str+'')
+        .replace(/\"/g, "\"\"")        // escape double quotes
+        .replace(/\0/g, "\\0");        // replace nulls with 0
+    };
+
+  });
+
+  </script>
+</div>
+</body>
+</html>
